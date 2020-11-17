@@ -3,9 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
     "removeComments": true,
-    // "outFile": "build/app.js"
     "outDir": "build"
   },
   "include": [
