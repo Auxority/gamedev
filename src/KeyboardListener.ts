@@ -61,7 +61,7 @@ class KeyboardListener {
     }
 
     /**
-     * Handles the keydown event and modifies the keystates.
+     * Handles the keydown event and modifies the current keystates.
      */
     private keyDown = (ev: KeyboardEvent): void => {
         if (ev.defaultPrevented) {
@@ -71,7 +71,7 @@ class KeyboardListener {
     }
 
     /**
-     * Handles the keyup event and modifies the keystates.
+     * Handles the keyup event and modifies the current keystates.
      */
     private keyUp = (ev: KeyboardEvent): void => {
         if (ev.defaultPrevented) {
