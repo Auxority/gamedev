@@ -1,0 +1,17 @@
+{
+  "name": "codecanvas",
+  "version": "0.1.0",
+  "description": "HTML5 Canvas Module",
+  "main": "index.html",
+  "author": "Mischa Gideonse",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc-watch "
+  },
+  "devDependencies": {
+    "typescript": "^3.6",
+    "tsc-watch": "^4.0"
+  },
+  "dependencies": {}
+}
