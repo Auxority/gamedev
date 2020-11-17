@@ -22,9 +22,6 @@ class MouseListener {
     }
 
     private mouseMove = (ev: MouseEvent): void => {
-        if (ev.defaultPrevented) {
-            return;
-        }
         this.x = ev.x;
         this.y = ev.y;
     }

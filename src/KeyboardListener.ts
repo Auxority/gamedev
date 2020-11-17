@@ -53,10 +53,16 @@ class KeyboardListener {
         window.addEventListener("keyup", this.keyUp);
     }
 
+    /**
+     * Checks if a key is currently pressed.
+     */
     public isKeyDown(key: string): boolean {
         return this.keyStates.get(key) !== undefined;
     }
 
+    /**
+     * Handles the keydown event and modifies the keystates.
+     */
     private keyDown = (ev: KeyboardEvent): void => {
         if (ev.defaultPrevented) {
             return;
@@ -64,6 +70,9 @@ class KeyboardListener {
         this.keyStates.set(ev.code, true);
     }
 
+    /**
+     * Handles the keyup event and modifies the keystates.
+     */
     private keyUp = (ev: KeyboardEvent): void => {
         if (ev.defaultPrevented) {
             return;

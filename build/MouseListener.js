@@ -2,9 +2,6 @@ import { Vector } from "./Vector.js";
 class MouseListener {
     constructor() {
         this.mouseMove = (ev) => {
-            if (ev.defaultPrevented) {
-                return;
-            }
             this.x = ev.x;
             this.y = ev.y;
         };
