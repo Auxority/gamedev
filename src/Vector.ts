@@ -203,7 +203,7 @@ class Vector {
     }
 
     /**
-     * Lerps the current vector towards another vector.
+     * Uses linear interpolation to change the current vector into another vector by a certain amount.
      * @param target The vector to lerp towards.
      * @param alpha A number between 0 and 1 (0% -> 100%)
      */
@@ -318,11 +318,11 @@ class Vector {
     }
 
     /**
-     * Lerps vector a to vector b.
-     * @param alpha Ranges from 0 to 1.
+     * Uses linear interpolation to change the current vector into another vector by a certain amount.
+     * @param alpha A number between 0 and 1 (0% -> 100%)
      */
-    public static lerp(a: Vector, b: Vector, alpha: number): Vector {
-        return new Vector(a._x * (1 - alpha) + b._x * alpha, a._y * (1 - alpha) + b._y * alpha);
+    public static lerp(current: Vector, target: Vector, alpha: number): Vector {
+        return new Vector(current._x * (1 - alpha) + target._x * alpha, current._y * (1 - alpha) + target._y * alpha);
     }
 
     /**

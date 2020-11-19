@@ -1,3 +1,76 @@
+class Color {
+    constructor(red, green, blue, alpha) {
+        this.r = Math.max(0, Math.min(255, Math.round(red)));
+        this.g = Math.max(0, Math.min(255, Math.round(green)));
+        this.b = Math.max(0, Math.min(255, Math.round(blue)));
+        this.a = Math.max(0, Math.min(1, alpha));
+    }
+    lerp(target, alpha) {
+        const invertA = 1 - alpha;
+        this.r = this.r * invertA + target.r * alpha;
+        this.g = this.g * invertA + target.g * alpha;
+        this.b = this.b * invertA + target.b * alpha;
+        this.a = this.a * invertA + target.a * alpha;
+        return this;
+    }
+    static lerp(current, target, alpha) {
+        const invertA = 1 - alpha;
+        return Color.fromRGBa(current.r * invertA + target.r * alpha, current.g * invertA + target.g * alpha, current.b * invertA + target.b * alpha, current.a * invertA + target.a * alpha);
+    }
+    static fromRGB(red, green, blue) {
+        return this.fromRGBa(red, green, blue, 1);
+    }
+    static fromRGBa(red, green, blue, alpha) {
+        return new Color(red, green, blue, alpha);
+    }
+    static fromHSL(hue, saturation, lightness) {
+        return this.fromHSLa(hue, saturation, lightness, 1);
+    }
+    static fromHSLa(hue, saturation, lightness, alpha) {
+        saturation /= 100;
+        lightness /= 100;
+        const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
+        const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+        const m = lightness - c / 2;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        const smallHue = Math.floor(hue / 60);
+        switch (smallHue) {
+            case 0:
+                r = c;
+                g = x;
+                break;
+            case 1:
+                r = x;
+                g = c;
+                break;
+            case 2:
+                g = c;
+                b = x;
+                break;
+            case 3:
+                g = x;
+                b = c;
+                break;
+            case 4:
+                r = x;
+                b = c;
+                break;
+            case 5:
+                r = c;
+                b = x;
+                break;
+        }
+        r = Math.round((r + m) * 255);
+        g = Math.round((g + m) * 255);
+        b = Math.round((b + m) * 255);
+        return new Color(r, g, b, alpha);
+    }
+    toString() {
+        return `rgba(${this.r}, ${this.b}, ${this.b}, ${this.a})`;
+    }
+}
 class Game {
     constructor(canvas) {
         this.scenes = [];
@@ -410,8 +483,8 @@ class Vector {
         }
         return new Vector(a / b, a / b);
     }
-    static lerp(a, b, alpha) {
-        return new Vector(a._x * (1 - alpha) + b._x * alpha, a._y * (1 - alpha) + b._y * alpha);
+    static lerp(current, target, alpha) {
+        return new Vector(current._x * (1 - alpha) + target._x * alpha, current._y * (1 - alpha) + target._y * alpha);
     }
     static rotate(v, radians) {
         return Vector.fromAngle(v.angle + radians, v.magnitude);
