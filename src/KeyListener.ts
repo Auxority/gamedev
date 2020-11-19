@@ -36,15 +36,19 @@ enum Keys {
     Nine = "Digit9",
     Zero = "Digit0",
     Space = "Space",
-    LeftShift = "ShiftLeft",
-    RightShift = "ShiftRight",
-    LeftCtrl = "ControlLeft",
-    RightCtrl = "ControlRight",
-    LeftAlt = "AltLeft",
-    RightAlt = "AltRight"
+    ShiftLeft = "ShiftLeft",
+    ShiftRight = "ShiftRight",
+    ControlLeft = "ControlLeft",
+    ControlRight = "ControlRight",
+    AltLeft = "AltLeft",
+    AltRight = "AltRight",
+    ArrowUp = "ArrowUp",
+    ArrowRight = "ArrowRight",
+    ArrowLeft = "ArrowLeft",
+    ArrowDown = "ArrowDown"
 }
 
-class KeyboardListener {
+class KeyListener {
     private keyStates: Map<string, boolean>;
 
     public constructor() {
@@ -80,5 +84,3 @@ class KeyboardListener {
         this.keyStates.delete(ev.code);
     }
 }
-
-export { KeyboardListener, Keys };

@@ -3,10 +3,10 @@ html, body {
     padding: 0;
 }
 
-#test {
+#game {
     background-color: rgb(35, 35, 35);
-    width: 50vmin;
-    height: 50vmin;
+    /* width: 80vmin;
+    height: 80vmin; */
     position: absolute;
     top: 50%;
     left: 50%;

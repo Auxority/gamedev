@@ -80,5 +80,3 @@ class UDim2 {
         this._y.sub(u.y);
     }
 }
-
-export { UDim, UDim2 };

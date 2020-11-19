@@ -1,15 +1,19 @@
+  
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "strict": true,
-    "removeComments": true,
-    "outDir": "build"
+      "target": "es6",
+      "sourceMap": true,
+      "noImplicitAny": true,
+      "noImplicitReturns": true,
+      "removeComments": true,
+      "outFile": "build/app.js",
+      "noEmitOnError": true
   },
   "include": [
-    "src/**/*"
+      "src/**/*"
   ],
   "exclude": [
-    "node_modules"
+      "node_modules",
+      "**/*.spec.ts"
   ]
 }
