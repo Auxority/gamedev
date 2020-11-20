@@ -52,6 +52,17 @@ class Vector {
     }
 
     /**
+     * Sets the vector components directly.
+     * @param x x-component of the vector.
+     * @param y y-component of the vector.
+     */
+    public set(x: number, y: number): Vector {
+        this._x = x;
+        this._y = y;
+        return this;
+    }
+
+    /**
      * Calculates the angle of the vector.
      */
     public get angle(): number {

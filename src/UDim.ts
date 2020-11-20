@@ -7,24 +7,39 @@ class UDim {
         this._offset = offset;
     }
 
+    /**
+     * The scale value from the UDim
+     */
     public get scale() {
         return this._scale;
     }
 
+    /**
+     * The offset value from the UDim
+     */
     public get offset() {
         return this._offset;
     }
 
+    /**
+     * Directly sets the UDim values.
+     */
     public set(scale: number, offset: number) {
         this._scale = scale || this._scale;
         this._offset = offset || this._offset;
     }
 
+    /**
+     * Adds another UDim to this UDim.
+     */
     public add(u: UDim) {
         this._scale += u.scale;
         this._offset += u.offset;
     }
 
+    /**
+     * Subtracts another UDim from this UDim.
+     */
     public sub(u: UDim) {
         this._scale -= u.scale;
         this._offset -= u.offset;

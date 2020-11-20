@@ -1,16 +1,19 @@
 class Color {
     constructor(red, green, blue, alpha) {
-        this.r = Math.max(0, Math.min(255, Math.round(red)));
-        this.g = Math.max(0, Math.min(255, Math.round(green)));
-        this.b = Math.max(0, Math.min(255, Math.round(blue)));
+        this.r = Math.max(0, Math.min(255, red));
+        this.g = Math.max(0, Math.min(255, green));
+        this.b = Math.max(0, Math.min(255, blue));
         this.a = Math.max(0, Math.min(1, alpha));
+    }
+    static random() {
+        return Color.fromHSL(Math.round(Math.random() * 360), Math.round(Math.random() * 100), Math.round(Math.random() * 100));
     }
     lerp(target, alpha) {
         const invertA = 1 - alpha;
         this.r = this.r * invertA + target.r * alpha;
         this.g = this.g * invertA + target.g * alpha;
         this.b = this.b * invertA + target.b * alpha;
-        this.a = this.a * invertA + target.a * alpha;
+        this.a = this.a * invertA + target.b * alpha;
         return this;
     }
     static lerp(current, target, alpha) {
@@ -68,19 +71,21 @@ class Color {
         return new Color(r, g, b, alpha);
     }
     toString() {
-        return `rgba(${this.r}, ${this.b}, ${this.b}, ${this.a})`;
+        return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`;
     }
 }
 class Game {
     constructor(canvas) {
         this.scenes = [];
         this.scene = 0;
-        this.loop = (timestamp) => {
-            const step = timestamp - this.previous;
-            this.previous = timestamp;
+        this.lag = 0;
+        this.loop = (current) => {
+            const elapsed = current - this.previous;
+            this.previous = current;
+            this.lag += elapsed;
             const scene = this.scenes[this.scene];
-            scene.input();
-            scene.update(step);
+            scene.processInput();
+            scene.update(elapsed);
             scene.render();
             requestAnimationFrame(this.loop);
         };
@@ -89,144 +94,74 @@ class Game {
         requestAnimationFrame(this.loop);
     }
 }
-var Keys;
-(function (Keys) {
-    Keys["A"] = "KeyA";
-    Keys["B"] = "KeyB";
-    Keys["C"] = "KeyC";
-    Keys["D"] = "KeyD";
-    Keys["E"] = "KeyE";
-    Keys["F"] = "KeyF";
-    Keys["G"] = "KeyG";
-    Keys["H"] = "KeyH";
-    Keys["I"] = "KeyI";
-    Keys["J"] = "KeyJ";
-    Keys["K"] = "KeyK";
-    Keys["L"] = "KeyL";
-    Keys["M"] = "KeyM";
-    Keys["N"] = "KeyN";
-    Keys["O"] = "KeyO";
-    Keys["P"] = "KeyP";
-    Keys["Q"] = "KeyQ";
-    Keys["R"] = "KeyR";
-    Keys["S"] = "KeyS";
-    Keys["T"] = "KeyT";
-    Keys["U"] = "KeyU";
-    Keys["V"] = "KeyV";
-    Keys["W"] = "KeyW";
-    Keys["X"] = "KeyX";
-    Keys["Y"] = "KeyY";
-    Keys["Z"] = "KeyZ";
-    Keys["One"] = "Digit1";
-    Keys["Two"] = "Digit2";
-    Keys["Three"] = "Digit3";
-    Keys["Four"] = "Digit4";
-    Keys["Five"] = "Digit5";
-    Keys["Six"] = "Digit6";
-    Keys["Seven"] = "Digit7";
-    Keys["Eight"] = "Digit8";
-    Keys["Nine"] = "Digit9";
-    Keys["Zero"] = "Digit0";
-    Keys["Space"] = "Space";
-    Keys["ShiftLeft"] = "ShiftLeft";
-    Keys["ShiftRight"] = "ShiftRight";
-    Keys["ControlLeft"] = "ControlLeft";
-    Keys["ControlRight"] = "ControlRight";
-    Keys["AltLeft"] = "AltLeft";
-    Keys["AltRight"] = "AltRight";
-    Keys["ArrowUp"] = "ArrowUp";
-    Keys["ArrowRight"] = "ArrowRight";
-    Keys["ArrowLeft"] = "ArrowLeft";
-    Keys["ArrowDown"] = "ArrowDown";
-})(Keys || (Keys = {}));
-class KeyListener {
-    constructor() {
-        this.keyDown = (ev) => {
-            if (ev.defaultPrevented) {
-                return;
-            }
-            this.keyStates.set(ev.code, true);
-        };
-        this.keyUp = (ev) => {
-            if (ev.defaultPrevented) {
-                return;
-            }
-            this.keyStates.delete(ev.code);
-        };
-        this.keyStates = new Map();
-        window.addEventListener("keydown", this.keyDown);
-        window.addEventListener("keyup", this.keyUp);
-    }
-    isKeyDown(key) {
-        return this.keyStates.get(key) !== undefined;
-    }
-}
-class MouseListener {
-    constructor() {
-        this.mouseMove = (ev) => {
-            this._x = ev.x;
-            this._y = ev.y;
-            this._target = ev.target;
-        };
-        this._x = 0;
-        this._y = 0;
-        window.addEventListener("mousemove", this.mouseMove);
-    }
-    get position() {
-        return new Vector(this._x, this._y);
-    }
-    get x() {
-        return this._x;
-    }
-    get y() {
-        return this._y;
-    }
-    get target() {
-        return this._target;
-    }
-    getPositionOnElement(element) {
-        const rect = element.getBoundingClientRect();
-        const x = this.x - rect.left;
-        const y = this.y - rect.top;
-        return new Vector(x, y);
-    }
-    inArea(element, x, y, width, height) {
-        const position = this.getPositionOnElement(element);
-        return (position.x >= x && position.x <= x + width) && (position.y >= y && position.y <= y + height);
-    }
-}
+Game.MS_PER_UPDATE = 10;
 class Scene {
     constructor(canvas, width, height) {
-        this.rotation = 0;
+        this.someColor = Color.fromRGBa(25, 255, 150, 1);
+        this.anotherColor = Color.fromRGBa(25, 150, 255, 1);
+        this.color = "#ffffff";
+        this.alpha = 0;
+        this.fps = 0;
+        this.elements = [];
         this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
         this.keyboard = new KeyListener();
-        this.mouse = new MouseListener();
+        this.mouse = new MouseListener(canvas);
         this.canvas.width = width;
         this.canvas.height = height;
+        this.elements.push(new Rectangle(this.canvas, {
+            anchorPoint: new Vector(0.5, 0.5),
+            size: new UDim2(0.5, 0, 0.5, 0),
+            position: new UDim2(0.5, 0, 0.5, 0),
+            backgroundColor: Color.fromHSL(200, 100, 50),
+            zIndex: 0
+        }));
+        this.elements.push(new Rectangle(this.canvas, {
+            anchorPoint: new Vector(0.5, 0.5),
+            size: new UDim2(0.5, 0, 0.5, 0),
+            position: new UDim2(0.5, 0, 0.5, 0),
+            backgroundColor: Color.fromHSL(1, 100, 50),
+        }));
+        for (let i = 0; i < 25; i++) {
+            this.elements.push(new Rectangle(this.canvas, {
+                anchorPoint: new Vector(0.5, 0.5),
+                size: new UDim2(0.95, 0, 0.95, 0),
+                position: new UDim2(0.5, 0, 0.5, 0),
+                backgroundColor: Color.fromHSL(i / 25 * 360, 100, 50),
+                parent: this.elements[this.elements.length - 1]
+            }));
+        }
     }
-    input() {
+    processInput() {
+        if (this.keyboard.isKeyDown(Keys.ArrowRight)) {
+            this.alpha = Math.max(0, Math.min(1, this.alpha + 0.05));
+        }
+        if (this.keyboard.isKeyDown(Keys.ArrowLeft)) {
+            this.alpha = Math.max(0, Math.min(1, this.alpha - 0.05));
+        }
     }
-    update(step) {
-        this.fps = Math.floor(1000 / step + 0.5);
-        const degreesPerSecond = 45;
-        const deltaDegree = (step / 1000) * degreesPerSecond;
-        this.rotation += deltaDegree;
+    update(elapsed) {
+        this.fps = Math.round(1000 / elapsed);
+        this.elements.sort((a, b) => {
+            return a.zIndex - b.zIndex;
+        });
+        if (this.mouse.pressed) {
+            this.elements.forEach((element) => {
+                element.rotation += 1;
+            });
+        }
+        this.color = String(Color.lerp(this.someColor, this.anotherColor, this.alpha));
     }
     render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.elements.forEach((element, i) => {
+            element.draw(this.ctx);
+        });
         this.ctx.font = "16px Comic Sans MS";
-        this.ctx.fillStyle = "#ffffff";
+        this.ctx.fillStyle = this.color;
         this.ctx.textAlign = "center";
-        this.ctx.fillText(`FPS: ${this.fps}`, 0.92 * this.canvas.width, 0.05 * this.canvas.height);
-        const mousePosition = this.mouse.getPositionOnElement(this.canvas);
         this.ctx.save();
-        const origin = new Vector(this.canvas.width - 50, this.canvas.height * 0.5 - 50);
-        this.ctx.textAlign = "right";
-        this.ctx.translate(origin.x, origin.y);
-        this.ctx.rotate(this.rotation / 180 * Math.PI);
-        this.ctx.translate(-origin.x, -origin.y);
-        this.ctx.fillText(`Mouse: (x: ${mousePosition.x}, y: ${mousePosition.y})`, 0.5 * this.canvas.width, 0.5 * this.canvas.height);
+        this.ctx.fillText(`FPS: ${this.fps}`, 0.92 * this.canvas.width, 0.05 * this.canvas.height);
         this.ctx.restore();
     }
 }
@@ -310,6 +245,11 @@ class Vector {
     }
     copy() {
         return new Vector(this._x, this._y);
+    }
+    set(x, y) {
+        this._x = x;
+        this._y = y;
+        return this;
     }
     get angle() {
         return Math.atan2(this._y, this._x);
@@ -495,4 +435,238 @@ window.addEventListener("load", () => {
     const canvasElement = document.querySelector("#game");
     new Game(canvasElement);
 });
+class Gui {
+    constructor(canvas, settings) {
+        this.anchorPoint = settings.anchorPoint || new Vector(0, 0);
+        this.backgroundColor = settings.backgroundColor || Color.fromRGB(255, 255, 255);
+        this.borderColor = settings.borderColor || Color.fromRGB(0, 0, 0);
+        this.borderSize = settings.borderSize || 0;
+        this.parent = settings.parent;
+        this._position = settings.position || new UDim2(0, 0, 0, 0);
+        this.rotation = settings.rotation || 0;
+        this._size = settings.size || new UDim2(0, 100, 0, 100);
+        this.visible = settings.visible || true;
+        this.zIndex = settings.zIndex || 0;
+        this.canvas = canvas;
+        this.update();
+    }
+    update() {
+        if (this.parent) {
+            this._width = this.size.x.scale * this.parent.width + this.size.x.offset;
+            this._height = this.size.y.scale * this.parent.height + this.size.y.offset;
+            this._x = this.parent.x + this._position.x.scale * this.parent.width + this._position.x.offset - this.anchorPoint.x * this._width;
+            this._y = this.parent.y + this._position.y.scale * this.parent.height + this._position.y.offset - this.anchorPoint.y * this._height;
+        }
+        else {
+            this._width = this.size.x.scale * this.canvas.width + this.size.x.offset;
+            this._height = this.size.y.scale * this.canvas.height + this.size.y.offset;
+            this._x = this._position.x.scale * this.canvas.width + this._position.x.offset - this.anchorPoint.x * this._width;
+            this._y = this._position.y.scale * this.canvas.height + this._position.y.offset - this.anchorPoint.y * this._height;
+        }
+    }
+    get position() {
+        return this._position;
+    }
+    set position(position) {
+        this._position = position;
+        this.update();
+    }
+    get size() {
+        return this._size;
+    }
+    set size(size) {
+        this._size = size;
+        this.update();
+    }
+    get x() {
+        return this._x;
+    }
+    get y() {
+        return this._y;
+    }
+    get width() {
+        return this._width;
+    }
+    get height() {
+        return this._height;
+    }
+}
+class Circle extends Gui {
+    constructor(canvas, settings, startAngle, endAngle) {
+        super(canvas, settings);
+        this.startAngle = startAngle || 0;
+        this.endAngle = endAngle || 2 * Math.PI;
+    }
+    applyRotation(ctx, gui) {
+        const origin = new Vector(gui.x + 0.5 * gui.width, gui.y + 0.5 * gui.height);
+        ctx.translate(origin.x, origin.y);
+        ctx.rotate(gui.rotation * Math.PI / 180);
+        ctx.translate(-origin.x, -origin.y);
+    }
+    parentRotations(ctx, parent) {
+        while (parent) {
+            if (parent.rotation !== 0) {
+                this.applyRotation(ctx, parent);
+            }
+            parent = parent.parent;
+        }
+    }
+    draw(ctx) {
+        if (this.visible === false) {
+            return;
+        }
+        this.update();
+        ctx.save();
+        ctx.fillStyle = String(this.backgroundColor);
+        ctx.strokeStyle = String(this.borderColor);
+        ctx.lineWidth = this.borderSize;
+        this.parentRotations(ctx, this.parent);
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y, 0.5 * this.width, 0.5 * this.height, this.rotation * Math.PI / 180, this.startAngle, this.endAngle);
+        ctx.fill();
+        if (this.borderSize > 0) {
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+class Rectangle extends Gui {
+    constructor(canvas, settings) {
+        super(canvas, settings);
+    }
+    applyRotation(ctx, gui) {
+        const origin = new Vector(gui.x + 0.5 * gui.width, gui.y + 0.5 * gui.height);
+        ctx.translate(origin.x, origin.y);
+        ctx.rotate(gui.rotation * Math.PI / 180);
+        ctx.translate(-origin.x, -origin.y);
+    }
+    parentRotations(ctx, parent) {
+        while (parent) {
+            if (parent.rotation !== 0) {
+                this.applyRotation(ctx, parent);
+            }
+            parent = parent.parent;
+        }
+    }
+    draw(ctx) {
+        if (this.visible === false) {
+            return;
+        }
+        this.update();
+        ctx.save();
+        ctx.fillStyle = String(this.backgroundColor);
+        ctx.strokeStyle = String(this.borderColor);
+        ctx.lineWidth = this.borderSize;
+        this.parentRotations(ctx, this.parent);
+        if (this.rotation !== 0) {
+            this.applyRotation(ctx, this);
+        }
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.restore();
+    }
+}
+var Keys;
+(function (Keys) {
+    Keys["A"] = "KeyA";
+    Keys["B"] = "KeyB";
+    Keys["C"] = "KeyC";
+    Keys["D"] = "KeyD";
+    Keys["E"] = "KeyE";
+    Keys["F"] = "KeyF";
+    Keys["G"] = "KeyG";
+    Keys["H"] = "KeyH";
+    Keys["I"] = "KeyI";
+    Keys["J"] = "KeyJ";
+    Keys["K"] = "KeyK";
+    Keys["L"] = "KeyL";
+    Keys["M"] = "KeyM";
+    Keys["N"] = "KeyN";
+    Keys["O"] = "KeyO";
+    Keys["P"] = "KeyP";
+    Keys["Q"] = "KeyQ";
+    Keys["R"] = "KeyR";
+    Keys["S"] = "KeyS";
+    Keys["T"] = "KeyT";
+    Keys["U"] = "KeyU";
+    Keys["V"] = "KeyV";
+    Keys["W"] = "KeyW";
+    Keys["X"] = "KeyX";
+    Keys["Y"] = "KeyY";
+    Keys["Z"] = "KeyZ";
+    Keys["One"] = "Digit1";
+    Keys["Two"] = "Digit2";
+    Keys["Three"] = "Digit3";
+    Keys["Four"] = "Digit4";
+    Keys["Five"] = "Digit5";
+    Keys["Six"] = "Digit6";
+    Keys["Seven"] = "Digit7";
+    Keys["Eight"] = "Digit8";
+    Keys["Nine"] = "Digit9";
+    Keys["Zero"] = "Digit0";
+    Keys["Space"] = "Space";
+    Keys["ShiftLeft"] = "ShiftLeft";
+    Keys["ShiftRight"] = "ShiftRight";
+    Keys["ControlLeft"] = "ControlLeft";
+    Keys["ControlRight"] = "ControlRight";
+    Keys["AltLeft"] = "AltLeft";
+    Keys["AltRight"] = "AltRight";
+    Keys["ArrowUp"] = "ArrowUp";
+    Keys["ArrowRight"] = "ArrowRight";
+    Keys["ArrowLeft"] = "ArrowLeft";
+    Keys["ArrowDown"] = "ArrowDown";
+})(Keys || (Keys = {}));
+class KeyListener {
+    constructor() {
+        this.keyDown = (ev) => {
+            if (ev.defaultPrevented) {
+                return;
+            }
+            this.keyStates.set(ev.code, true);
+        };
+        this.keyUp = (ev) => {
+            if (ev.defaultPrevented) {
+                return;
+            }
+            this.keyStates.delete(ev.code);
+        };
+        this.keyStates = new Map();
+        window.addEventListener("keydown", this.keyDown);
+        window.addEventListener("keyup", this.keyUp);
+    }
+    isKeyDown(key) {
+        return this.keyStates.get(key) !== undefined;
+    }
+}
+class MouseListener {
+    constructor(canvas) {
+        this.mouseMove = (ev) => {
+            const rect = this._canvas.getBoundingClientRect();
+            this._position.set(Math.round(ev.x - rect.left), Math.round(ev.y - rect.top));
+        };
+        this.mouseUp = (ev) => {
+            this._pressed = false;
+        };
+        this.mouseClick = (ev) => {
+            this._pressed = true;
+        };
+        this._canvas = canvas;
+        this._position = new Vector(0, 0);
+        this._pressed = false;
+        window.addEventListener("mousedown", this.mouseClick);
+        window.addEventListener("mouseup", this.mouseUp);
+        window.addEventListener("mousemove", this.mouseMove);
+    }
+    get position() {
+        return this._position;
+    }
+    get x() {
+        return this._position.x;
+    }
+    get y() {
+        return this._position.y;
+    }
+    get pressed() {
+        return this._pressed;
+    }
+}
 //# sourceMappingURL=app.js.map

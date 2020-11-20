@@ -4,11 +4,16 @@ class Color {
     private b: number;
     private a: number;
 
+    //TODO: Fix bug where Hue is 360
     private constructor(red: number, green: number, blue: number, alpha: number) {
-        this.r = Math.max(0, Math.min(255, Math.round(red)));
-        this.g = Math.max(0, Math.min(255, Math.round(green)));
-        this.b = Math.max(0, Math.min(255, Math.round(blue)));
+        this.r = Math.max(0, Math.min(255, red));
+        this.g = Math.max(0, Math.min(255, green));
+        this.b = Math.max(0, Math.min(255, blue));
         this.a = Math.max(0, Math.min(1, alpha));
+    }
+
+    public static random(): Color {
+        return Color.fromHSL(Math.round(Math.random() * 360), Math.round(Math.random() * 100), Math.round(Math.random() * 100));
     }
 
     /**
@@ -21,7 +26,7 @@ class Color {
         this.r = this.r * invertA + target.r * alpha
         this.g = this.g * invertA + target.g * alpha
         this.b = this.b * invertA + target.b * alpha
-        this.a = this.a * invertA + target.a * alpha;
+        this.a = this.a * invertA + target.b * alpha;
         return this;
     }
 
@@ -128,6 +133,6 @@ class Color {
      * Converts the color instance to a string when String(clr) or clr.toString() is called. 
      */
     toString(): string {
-        return `rgba(${this.r}, ${this.b}, ${this.b}, ${this.a})`;
+        return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`;
     }
 }
